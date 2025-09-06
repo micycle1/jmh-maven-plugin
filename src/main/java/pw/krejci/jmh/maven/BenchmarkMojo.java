@@ -31,6 +31,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.repository.RepositorySystem;
+import org.apache.maven.shared.utils.io.DirectoryScanner;
 
 /**
  * Runs the JMH benchmarks using all benchmarks files from the test sources.
@@ -51,6 +52,9 @@ public class BenchmarkMojo extends TestCompilerMojo {
 
     @Parameter(defaultValue = "${session}", readonly = true)
     private MavenSession benchmarkSession;
+
+    @Parameter(property = PROPERTY_PREFIX + "sourceDirectory")
+    private String sourceDirectory;
 
     @Parameter(property = PROPERTY_PREFIX + "bm")
     private String benchmarkMode;
@@ -158,6 +162,45 @@ public class BenchmarkMojo extends TestCompilerMojo {
 
     @Override
     public void execute() throws MojoExecutionException, CompilationFailureException {
+        if (sourceDirectory != null) {
+            String pat = sourceDirectory.trim();
+            if (!pat.isEmpty()) {
+                List<String> roots = new ArrayList<>();
+                File base = getProject().getBasedir();
+
+                File asFile = new File(pat);
+                if (asFile.isAbsolute()) {
+                    if (asFile.isDirectory()) {
+                        roots.add(asFile.getAbsolutePath());
+                    } else {
+                        getLog().warn("Configured sourceDirectory is not a directory: " + asFile.getAbsolutePath());
+                    }
+                } else {
+                    DirectoryScanner ds = new DirectoryScanner();
+                    ds.setBasedir(base);
+                    ds.setIncludes(new String[] { pat.replace(File.separatorChar, '/') });
+                    ds.addDefaultExcludes();
+                    ds.scan();
+
+                    for (String relDir : ds.getIncludedDirectories()) {
+                        File dir = new File(base, relDir);
+                        if (dir.isDirectory()) {
+                            roots.add(dir.getAbsolutePath());
+                        }
+                    }
+                }
+
+                if (roots.isEmpty()) {
+                    getLog().warn("No benchmark source roots matched: " + pat);
+                } else {
+                    List<String> testRoots = getProject().getTestCompileSourceRoots();
+                    testRoots.clear();
+                    testRoots.addAll(roots);
+                    getLog().info("Using benchmark source roots: " + String.join(", ", roots));
+                }
+            }
+        }
+
         super.execute();
 
         File benchmarkList = new File(new File(getProject().getBuild().getTestOutputDirectory(), "META-INF"),

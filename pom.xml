@@ -15,10 +15,10 @@
 
         <version.maven>3.6.0</version.maven>
         <version.maven-plugin-plugin>3.6.0</version.maven-plugin-plugin>
-        <version.maven-invoker>1.9</version.maven-invoker>
+        <version.maven-invoker>3.9.1</version.maven-invoker>
         <version.maven-compiler>3.8.1</version.maven-compiler>
         <version.net.revelc.code.formatter>2.12.1</version.net.revelc.code.formatter>
-        <version.net.revelc.code>1.4.1</version.net.revelc.code>
+        <version.net.revelc.code>1.12.0</version.net.revelc.code>
 
         <skipTests>false</skipTests>
         <itest.debug-output>false</itest.debug-output>
